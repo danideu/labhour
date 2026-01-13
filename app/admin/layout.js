@@ -16,11 +16,15 @@ export default function AdminLayout({ children }) {
         const saved = localStorage.getItem('admin-sidebar-collapsed');
         if (saved === 'true') setCollapsed(true);
 
-        // Ensure body overflow is reset on mount
-        document.body.style.overflow = 'unset';
+        // Clean up any potential blocking states from previous renders
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.classList.remove('antigravity-scroll-lock');
 
         return () => {
-            document.body.style.overflow = 'unset';
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.classList.remove('antigravity-scroll-lock');
         };
     }, []);
 
