@@ -74,7 +74,7 @@ export default function AdminLayout({ children }) {
                         )}
                     </button>
 
-                    <nav className="flex-1 space-y-1">
+                    <nav className="space-y-1">
                         {navItems.map(item => (
                             <Link
                                 key={item.href}
@@ -88,7 +88,7 @@ export default function AdminLayout({ children }) {
                         ))}
                     </nav>
 
-                    <div className={`pt-4 border-t border-white/10 ${collapsed ? 'text-center' : ''}`}>
+                    <div className={`mt-[100px] pt-4 border-t border-white/10 ${collapsed ? 'text-center' : ''}`}>
                         <LogoutButton collapsed={collapsed} />
                     </div>
                 </aside>
