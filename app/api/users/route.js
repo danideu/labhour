@@ -1,0 +1,60 @@
+import { NextResponse } from 'next/server';
+import db from '@/lib/db';
+import bcrypt from 'bcryptjs';
+import { getSession } from '@/lib/auth';
+
+// Middleware helper to ensure admin
+async function ensureAdmin() {
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+        return false;
+    }
+    return true;
+}
+
+export async function GET() {
+    if (!await ensureAdmin()) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    try {
+        const stmt = db.prepare('SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC');
+        const users = stmt.all();
+        return NextResponse.json(users);
+    } catch (error) {
+        return NextResponse.json({ error: 'Error al obtener usuarios' }, { status: 500 });
+    }
+}
+
+export async function POST(request) {
+    if (!await ensureAdmin()) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    try {
+        const { name, email, password, role } = await request.json();
+
+        if (!name || !email || !password || !role) {
+            return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
+        }
+
+        // Check unique email
+        const checkStmt = db.prepare('SELECT id FROM users WHERE email = ?');
+        if (checkStmt.get(email)) {
+            return NextResponse.json({ error: 'El email ya está registrado' }, { status: 409 });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const insertStmt = db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)');
+        const result = insertStmt.run(name, email, hashedPassword, role);
+
+        return NextResponse.json({
+            success: true,
+            user: { id: result.lastInsertRowid, name, email, role }
+        }, { status: 201 });
+
+    } catch (error) {
+        console.error('Error creating user:', error);
+        return NextResponse.json({ error: 'Error al crear usuario' }, { status: 500 });
+    }
+}
