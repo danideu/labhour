@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LabHour - Sistema de Control Horario
 
-## Getting Started
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+![SQLite](https://img.shields.io/badge/SQLite-3-blue?logo=sqlite)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?logo=tailwind-css)
 
-First, run the development server:
+Sistema de control horario y gestión de jornadas laborales diseñado para cumplir con la normativa laboral española. Especialmente orientado al sector de la construcción con soporte para múltiples obras/proyectos.
+
+## 🚀 Características
+
+### Para Empleados
+- **Fichaje en tiempo real** - Clock in/out con selector de proyecto/obra
+- **Historial de jornadas** - Consulta de todos los fichajes con filtros
+- **Imputación manual** - Registro de jornadas retroactivas con justificación obligatoria
+- **Gestión de ausencias** - Solicitudes de vacaciones, bajas, permisos
+
+### Para Administradores
+- **Dashboard en tiempo real** - Métricas, gráficas y actividad en vivo
+- **Validación de horas manuales** - Aprobar/rechazar imputaciones con comentarios
+- **Gestión de empleados y proyectos** - CRUD completo
+- **Sistema de recordatorios** - Avisos a empleados que no han fichado
+- **Logs de auditoría** - Registro inmutable para Inspección de Trabajo
+- **Informes y exportación CSV**
+
+### Cumplimiento Normativo
+- ✅ Etiquetado permanente de fichajes manuales vs automáticos
+- ✅ Timestamp del servidor (inmutable)
+- ✅ Auditoría completa con IP, dispositivo y justificación
+- ✅ Conservación mínima 4 años
+- ✅ Consulta telemática instantánea
+
+## 📦 Tecnologías
+
+- **Frontend**: Next.js 15, React 19, Tailwind CSS 3
+- **Backend**: Next.js API Routes
+- **Base de datos**: SQLite (better-sqlite3)
+- **Autenticación**: JWT con jose
+
+## 🛠️ Instalación
 
 ```bash
+# Clonar repositorio
+git clone <url-del-repo>
+cd WEB
+
+# Instalar dependencias
+npm install
+
+# Iniciar en desarrollo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Usuario Admin por defecto
+- **Email**: admin@empresa.com
+- **Contraseña**: admin123
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📁 Estructura del Proyecto
 
-## Learn More
+```
+├── app/
+│   ├── admin/          # Páginas del panel administrador
+│   ├── dashboard/      # Páginas del panel empleado
+│   ├── api/            # API Routes
+│   └── globals.css     # Estilos globales con variables CSS
+├── components/         # Componentes reutilizables
+├── lib/                # Utilidades (auth, db, audit, notifications)
+├── database.sqlite     # Base de datos SQLite
+└── middleware.js       # Protección de rutas
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 🎨 Modo Claro/Oscuro
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+La aplicación incluye un toggle de tema (icono sol/luna) que permite alternar entre modo claro y oscuro. La preferencia se guarda en localStorage.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📋 Flujo de Imputación Manual
 
-## Deploy on Vercel
+1. El empleado accede a "Imputar Jornada"
+2. Rellena fecha, horas, proyecto y **justificación obligatoria**
+3. Se crea un registro en `audit_logs` con timestamp del servidor
+4. El fichaje queda en estado "Pendiente de Validación"
+5. El admin recibe notificación y puede aprobar/rechazar
+6. El empleado recibe notificación del resultado
+7. Todo queda registrado para la Inspección de Trabajo
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔒 Seguridad
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Contraseñas hasheadas con bcrypt
+- Tokens JWT con expiración configurable
+- Middleware de protección por rol
+- Logs de auditoría inmutables
+
+## 📄 Licencia
+
+Uso privado / Proyecto interno
+
+---
+
+Desarrollado con ❤️ para gestionar el control horario de forma sencilla y legal.
