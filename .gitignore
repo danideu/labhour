@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# SQLite temporary files
+*.sqlite-wal
+*.sqlite-shm
+
+# User uploaded avatars
+public/avatars/
