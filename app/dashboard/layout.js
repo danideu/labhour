@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import LogoutButton from '@/components/LogoutButton';
 import NotificationBell from '@/components/NotificationBell';
 import ThemeToggle from '@/components/ThemeToggle';
+import Logo from '@/components/Logo';
 
 export default function EmployeeLayout({ children }) {
     const [collapsed, setCollapsed] = useState(false);
@@ -56,10 +58,16 @@ export default function EmployeeLayout({ children }) {
             <div className={`hidden md:grid ${collapsed ? 'grid-cols-[72px_1fr]' : 'grid-cols-[250px_1fr]'} min-h-screen transition-all duration-300`}>
                 {/* Sidebar */}
                 <aside className="border-r border-white/10 bg-black/40 backdrop-blur-xl p-4 flex flex-col">
-                    <div className={`mb-6 ${collapsed ? 'text-center' : ''}`}>
-                        <h1 className={`font-black tracking-tight bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent ${collapsed ? 'text-xl' : 'text-2xl'}`}>
-                            {collapsed ? 'LH' : 'LABHOUR'}
-                        </h1>
+                    <div className={`mb-6 ${collapsed ? 'text-center' : 'pl-3'}`}>
+                        <div className={`flex items-center ${collapsed ? 'justify-center h-8' : 'justify-start h-12'}`}>
+                            {collapsed ? (
+                                <span className="font-black text-xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">LH</span>
+                            ) : (
+                                <div className="h-12 flex items-center justify-start">
+                                    <Logo className="text-3xl" />
+                                </div>
+                            )}
+                        </div>
                         {!collapsed && <p className="text-xs text-slate-500 uppercase tracking-widest mt-1">Mi Espacio</p>}
                     </div>
 
@@ -121,7 +129,9 @@ export default function EmployeeLayout({ children }) {
                     <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 -ml-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" x2="21" y1="6" y2="6" /><line x1="3" x2="21" y1="12" y2="12" /><line x1="3" x2="21" y1="18" y2="18" /></svg>
                     </button>
-                    <h1 className="font-black text-lg bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">LABHOUR</h1>
+                    <div className="h-8 flex items-center">
+                        <Logo className="text-xl" />
+                    </div>
                     <div className="flex items-center gap-1">
                         <ThemeToggle />
                         <NotificationBell />
@@ -133,7 +143,9 @@ export default function EmployeeLayout({ children }) {
                     <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl">
                         <div className="p-4">
                             <div className="flex justify-between items-center mb-8">
-                                <h1 className="font-black text-2xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">LABHOUR</h1>
+                                <div className="h-10 flex items-center">
+                                    <Logo className="text-2xl" />
+                                </div>
                                 <button onClick={() => setMobileMenuOpen(false)} className="p-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" /></svg>
                                 </button>

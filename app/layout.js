@@ -6,6 +6,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
   title: "LabHour | Gestión de Proyectos",
   description: "Plataforma de registro horario y gestión de proyectos SaaS",
+  icons: {
+    icon: '/logo_v2.png',
+  },
 };
 
 export default function RootLayout({ children }) {

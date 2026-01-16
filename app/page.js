@@ -1,4 +1,6 @@
 import LoginForm from '@/components/LoginForm';
+import Image from 'next/image';
+import Logo from '@/components/Logo';
 
 export default function Home() {
   return (
@@ -8,10 +10,10 @@ export default function Home() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/20 blur-[100px]" />
 
       <div className="glass-card w-full max-w-md p-8 relative z-10">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-            LabHour
-          </h1>
+        <div className="mb-8 text-center flex flex-col items-center">
+          <div className="mb-6">
+            <Logo className="text-5xl" />
+          </div>
           <p className="text-slate-400">Accede a tu panel de gestión</p>
         </div>
         <LoginForm />
