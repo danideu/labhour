@@ -7,6 +7,7 @@ export default function UserForm({ user, onSuccess, onCancel }) {
         name: '',
         email: '',
         password: '',
+        confirmPassword: '',
         role: 'employee',
     });
     const [loading, setLoading] = useState(false);
@@ -18,6 +19,7 @@ export default function UserForm({ user, onSuccess, onCancel }) {
                 name: user.name,
                 email: user.email,
                 password: '', // Blank for security, only send if changing
+                confirmPassword: '',
                 role: user.role,
             });
         }
@@ -28,12 +30,20 @@ export default function UserForm({ user, onSuccess, onCancel }) {
         setLoading(true);
         setError('');
 
+        // Validar que las contraseñas coinciden al crear un nuevo usuario
+        if (!user && formData.password !== formData.confirmPassword) {
+            setError('Las contraseñas no coinciden');
+            setLoading(false);
+            return;
+        }
+
         try {
             const url = user ? `/api/users/${user.id}` : '/api/users';
             const method = user ? 'PUT' : 'POST';
 
-            // Remove password if empty on edit
+            // Remove password and confirmPassword if empty on edit
             const body = { ...formData };
+            delete body.confirmPassword; // Never send confirmPassword to API
             if (user && !body.password) {
                 delete body.password;
             }
@@ -100,6 +110,21 @@ export default function UserForm({ user, onSuccess, onCancel }) {
                     placeholder={user ? "••••••••" : ""}
                 />
             </div>
+
+            {!user && (
+                <div>
+                    <label className="block text-sm font-medium mb-1 text-slate-300">
+                        Confirmar Contraseña
+                    </label>
+                    <input
+                        type="password"
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                        required
+                        placeholder="Repite la contraseña"
+                    />
+                </div>
+            )}
 
             <div>
                 <label className="block text-sm font-medium mb-1 text-slate-300">Rol</label>

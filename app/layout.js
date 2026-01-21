@@ -4,8 +4,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "LabHour | Gestión de Proyectos",
-  description: "Plataforma de registro horario y gestión de proyectos SaaS",
+  title: "LabHour | Gestión de fichajes",
+  description: "Plataforma de registro horario y gestión de fichajes SaaS",
   icons: {
     icon: '/logo_v2.png',
   },

@@ -141,6 +141,32 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+            {/* Missing Clock-Ins */}
+            <div className="glass-card p-6 mb-6">
+                <h2 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+                    <span className="text-xl">⚠️</span>
+                    Empleados Sin Fichar Hoy
+                </h2>
+
+                {data.missingClockInUsers?.length === 0 ? (
+                    <p className="text-slate-500 italic">Todos los empleados han fichado hoy.</p>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {data.missingClockInUsers?.map((user) => (
+                            <div key={user.id} className="flex items-center gap-3 p-3 rounded bg-white/5 border border-white/5">
+                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+                                    {user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="overflow-hidden">
+                                    <p className="text-sm font-medium text-slate-200 truncate">{user.name}</p>
+                                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
             {/* Team Status Widget */}
             <div className="mb-6">
                 <TeamStatusWidget />

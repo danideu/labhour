@@ -59,13 +59,31 @@ export async function GET() {
         // 5. Recent completed entries (Project Distribution Data - Simplification for now)
         // Let's just return what we have
 
+        // 5. Users who haven't clocked in today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().replace('T', ' ').split('.')[0];
+
+        const missingClockInStmt = db.prepare(`
+            SELECT id, name, email 
+            FROM users 
+            WHERE role != 'admin' 
+            AND id NOT IN (
+                SELECT user_id 
+                FROM time_entries 
+                WHERE start_time >= ?
+            )
+        `);
+        const missingClockInUsers = missingClockInStmt.all(todayStr);
+
         return NextResponse.json({
             metrics: {
                 activeCount,
                 pendingAbsenceCount,
                 totalHours: Math.round(totalHours * 10) / 10 // Round to 1 decimal
             },
-            liveStatus
+            liveStatus,
+            missingClockInUsers
         });
 
     } catch (error) {
