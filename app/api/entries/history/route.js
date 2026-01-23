@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { query } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 export async function GET(request) {
@@ -14,33 +14,32 @@ export async function GET(request) {
     const endDate = searchParams.get('endDate');
 
     try {
-        let query = `
-          SELECT t.*, p.name as project_name 
-          FROM time_entries t
-          JOIN projects p ON t.project_id = p.id
-          WHERE t.user_id = ?
+        let sql = `
+            SELECT t.*, p.name as project_name 
+            FROM time_entries t
+            JOIN projects p ON t.project_id = p.id
+            WHERE t.user_id = ?
         `;
         const params = [session.id];
 
         if (projectId) {
-            query += ' AND t.project_id = ?';
+            sql += ' AND t.project_id = ?';
             params.push(projectId);
         }
 
         if (startDate) {
-            query += ' AND DATE(t.start_time) >= ?';
+            sql += ' AND DATE(t.start_time) >= ?';
             params.push(startDate);
         }
 
         if (endDate) {
-            query += ' AND DATE(t.start_time) <= ?';
+            sql += ' AND DATE(t.start_time) <= ?';
             params.push(endDate);
         }
 
-        query += ' ORDER BY t.start_time DESC LIMIT 200';
+        sql += ' ORDER BY t.start_time DESC LIMIT 200';
 
-        const stmt = db.prepare(query);
-        const entries = stmt.all(...params);
+        const entries = await query(sql, params);
 
         // Calculate total hours
         let totalHours = 0;

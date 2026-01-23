@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 async function ensureAdmin() {
@@ -17,54 +17,42 @@ export async function GET() {
 
     try {
         // 1. Active Employees (Count)
-        const activeCountStmt = db.prepare('SELECT count(*) as count FROM time_entries WHERE end_time IS NULL');
-        const activeCount = activeCountStmt.get().count;
+        const activeResult = await queryOne('SELECT count(*) as count FROM time_entries WHERE end_time IS NULL');
+        const activeCount = activeResult?.count || 0;
 
         // 2. Pending Absences (Count)
-        const pendingAbsenceStmt = db.prepare("SELECT count(*) as count FROM absence_requests WHERE status = 'PENDING'");
-        const pendingAbsenceCount = pendingAbsenceStmt.get().count;
+        const pendingResult = await queryOne("SELECT count(*) as count FROM absence_requests WHERE status = 'PENDING'");
+        const pendingAbsenceCount = pendingResult?.count || 0;
 
         // 3. Total Hours This Week (Aggregation)
-        // Get start of week (Monday)
-        const startOfWeek = new Date();
-        startOfWeek.setHours(0, 0, 0, 0);
-        const day = startOfWeek.getDay() || 7;
-        startOfWeek.setDate(startOfWeek.getDate() + 1 - day + (day === 0 ? -6 : 1) - 7); // Adjust logic for Monday start/Sunday issues if needed, simplification:
-        // Actually, SQL 'now' modifiers are easier if we trust DB time
-        // Let's do JS calculation for simplicity and control
         const now = new Date();
         const firstDay = new Date(now.setDate(now.getDate() - now.getDay() + 1));
         firstDay.setHours(0, 0, 0, 0);
         const firstDayStr = firstDay.toISOString().replace('T', ' ').split('.')[0];
 
-        const hoursStmt = db.prepare(`
-        SELECT SUM((julianday(IFNULL(end_time, DATETIME('now'))) - julianday(start_time)) * 24) as total_hours 
-        FROM time_entries 
-        WHERE start_time >= ?
-    `);
-        const totalHours = hoursStmt.get(firstDayStr).total_hours || 0;
-
+        const hoursResult = await queryOne(`
+            SELECT SUM((julianday(IFNULL(end_time, DATETIME('now'))) - julianday(start_time)) * 24) as total_hours 
+            FROM time_entries 
+            WHERE start_time >= ?
+        `, [firstDayStr]);
+        const totalHours = hoursResult?.total_hours || 0;
 
         // 4. Activity Feed / Live Status (List of active workers)
-        const liveStatusStmt = db.prepare(`
-      SELECT u.name as user_name, p.name as project_name, t.start_time
-      FROM time_entries t
-      JOIN users u ON t.user_id = u.id
-      JOIN projects p ON t.project_id = p.id
-      WHERE t.end_time IS NULL
-      ORDER BY t.start_time DESC
-    `);
-        const liveStatus = liveStatusStmt.all();
-
-        // 5. Recent completed entries (Project Distribution Data - Simplification for now)
-        // Let's just return what we have
+        const liveStatus = await query(`
+            SELECT u.name as user_name, p.name as project_name, t.start_time
+            FROM time_entries t
+            JOIN users u ON t.user_id = u.id
+            JOIN projects p ON t.project_id = p.id
+            WHERE t.end_time IS NULL
+            ORDER BY t.start_time DESC
+        `);
 
         // 5. Users who haven't clocked in today
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayStr = today.toISOString().replace('T', ' ').split('.')[0];
 
-        const missingClockInStmt = db.prepare(`
+        const missingClockInUsers = await query(`
             SELECT id, name, email 
             FROM users 
             WHERE role != 'admin' 
@@ -73,14 +61,13 @@ export async function GET() {
                 FROM time_entries 
                 WHERE start_time >= ?
             )
-        `);
-        const missingClockInUsers = missingClockInStmt.all(todayStr);
+        `, [todayStr]);
 
         return NextResponse.json({
             metrics: {
                 activeCount,
                 pendingAbsenceCount,
-                totalHours: Math.round(totalHours * 10) / 10 // Round to 1 decimal
+                totalHours: Math.round(totalHours * 10) / 10
             },
             liveStatus,
             missingClockInUsers

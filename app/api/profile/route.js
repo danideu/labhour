@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import db from '@/lib/db';
-import bcrypt from 'bcryptjs';
+import { queryOne, execute } from '@/lib/db';
 
 // GET current user profile
 export async function GET() {
@@ -11,10 +10,10 @@ export async function GET() {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        const user = db.prepare(`
+        const user = await queryOne(`
             SELECT id, name, email, role, avatar_url, created_at 
             FROM users WHERE id = ?
-        `).get(session.id);
+        `, [session.id]);
 
         if (!user) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
@@ -42,14 +41,14 @@ export async function PUT(request) {
         }
 
         // Check if email is already taken by another user
-        const existingUser = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email, session.id);
+        const existingUser = await queryOne('SELECT id FROM users WHERE email = ? AND id != ?', [email, session.id]);
         if (existingUser) {
             return NextResponse.json({ error: 'El email ya está en uso por otro usuario' }, { status: 400 });
         }
 
-        db.prepare(`
+        await execute(`
             UPDATE users SET name = ?, email = ? WHERE id = ?
-        `).run(name.trim(), email.toLowerCase().trim(), session.id);
+        `, [name.trim(), email.toLowerCase().trim(), session.id]);
 
         return NextResponse.json({ success: true, message: 'Perfil actualizado correctamente' });
     } catch (error) {

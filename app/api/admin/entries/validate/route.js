@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { query, queryOne, execute } from '@/lib/db';
 import { createAuditLog, AUDIT_ACTIONS } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
 
@@ -15,16 +15,15 @@ export async function GET(request) {
         const status = searchParams.get('status') || 'PENDING';
 
         // Get manual entries pending validation
-        const stmt = db.prepare(`
+        const entries = await query(`
             SELECT t.*, p.name as project_name, u.name as user_name, u.email as user_email
             FROM time_entries t
             JOIN projects p ON t.project_id = p.id
             JOIN users u ON t.user_id = u.id
             WHERE t.entry_type = 'MANUAL' AND t.validation_status = ?
             ORDER BY t.created_at DESC
-        `);
+        `, [status]);
 
-        const entries = stmt.all(status);
         return NextResponse.json(entries);
 
     } catch (error) {
@@ -51,8 +50,7 @@ export async function PUT(request) {
         }
 
         // Get current entry
-        const getStmt = db.prepare('SELECT * FROM time_entries WHERE id = ?');
-        const entry = getStmt.get(entryId);
+        const entry = await queryOne('SELECT * FROM time_entries WHERE id = ?', [entryId]);
 
         if (!entry) {
             return NextResponse.json({ error: 'Entrada no encontrada' }, { status: 404 });
@@ -67,15 +65,14 @@ export async function PUT(request) {
         const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'Unknown';
 
         // Update entry status
-        const updateStmt = db.prepare(`
+        await execute(`
             UPDATE time_entries
             SET validation_status = ?, validated_by = ?, validated_at = DATETIME('now', 'localtime')
             WHERE id = ?
-        `);
-        updateStmt.run(action, session.id, entryId);
+        `, [action, session.id, entryId]);
 
         // Create audit log
-        createAuditLog({
+        await createAuditLog({
             userId: session.id,
             actionType: action === 'VALIDATED' ? AUDIT_ACTIONS.VALIDATE_ENTRY : AUDIT_ACTIONS.REJECT_ENTRY,
             entityType: 'time_entry',

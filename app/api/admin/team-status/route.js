@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function GET() {
     try {
@@ -10,25 +10,26 @@ export async function GET() {
         }
 
         // Get all active employees
-        const allEmployees = db.prepare(`
+        const allEmployees = await query(`
             SELECT id, name, email FROM users WHERE role = 'employee'
-        `).all();
+        `);
 
         // Get employees who are currently clocked in
-        const clockedInEmployees = db.prepare(`
+        const clockedInResult = await query(`
             SELECT DISTINCT user_id FROM time_entries WHERE end_time IS NULL
-        `).all().map(e => e.user_id);
+        `);
+        const clockedInEmployees = clockedInResult.map(e => e.user_id);
 
         // Get employees who have approved absences for today
         const today = new Date().toISOString().split('T')[0];
-        const absentEmployees = db.prepare(`
+        const absentEmployees = await query(`
             SELECT ar.user_id, ar.type, u.name, u.email
             FROM absence_requests ar
             JOIN users u ON ar.user_id = u.id
             WHERE ar.status = 'APPROVED'
             AND ar.start_date <= ?
             AND ar.end_date >= ?
-        `).all(today, today);
+        `, [today, today]);
 
         const absentUserIds = absentEmployees.map(e => e.user_id);
 

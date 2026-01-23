@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { query, execute } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { notifyAllAdmins } from '@/lib/notifications';
 
@@ -10,8 +10,7 @@ export async function GET() {
     }
 
     try {
-        const stmt = db.prepare('SELECT * FROM absence_requests WHERE user_id = ? ORDER BY created_at DESC');
-        const absences = stmt.all(session.id);
+        const absences = await query('SELECT * FROM absence_requests WHERE user_id = ? ORDER BY created_at DESC', [session.id]);
         return NextResponse.json(absences);
     } catch (error) {
         return NextResponse.json({ error: 'Error al obtener ausencias' }, { status: 500 });
@@ -36,15 +35,13 @@ export async function POST(request) {
             return NextResponse.json({ error: 'La fecha de fin no puede ser anterior a la de inicio' }, { status: 400 });
         }
 
-        const insertStmt = db.prepare(`
-      INSERT INTO absence_requests (user_id, type, start_date, end_date, comments, status)
-      VALUES (?, ?, ?, ?, ?, 'PENDING')
-    `);
-
-        const result = insertStmt.run(session.id, type, startDate, endDate, comments || '');
+        const result = await execute(`
+            INSERT INTO absence_requests (user_id, type, start_date, end_date, comments, status)
+            VALUES (?, ?, ?, ?, ?, 'PENDING')
+        `, [session.id, type, startDate, endDate, comments || '']);
 
         // Notificar a todos los administradores
-        notifyAllAdmins({
+        await notifyAllAdmins({
             type: 'ABSENCE_REQUESTED',
             title: 'Nueva solicitud de ausencia',
             message: `${session.name} ha solicitado ${type} del ${startDate} al ${endDate}`,

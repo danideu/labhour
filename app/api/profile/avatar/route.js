@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { execute } from '@/lib/db';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
@@ -44,7 +44,7 @@ export async function POST(request) {
         await writeFile(path.join(avatarsDir, filename), buffer);
 
         // Update user avatar_url in database
-        db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatarPath, session.id);
+        await execute('UPDATE users SET avatar_url = ? WHERE id = ?', [avatarPath, session.id]);
 
         return NextResponse.json({
             success: true,

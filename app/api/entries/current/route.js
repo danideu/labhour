@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { queryOne } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 export async function GET() {
@@ -10,14 +10,12 @@ export async function GET() {
 
     try {
         // Find active entry (where end_time is NULL)
-        const stmt = db.prepare(`
-      SELECT t.*, p.name as project_name 
-      FROM time_entries t
-      JOIN projects p ON t.project_id = p.id
-      WHERE t.user_id = ? AND t.end_time IS NULL
-    `);
-
-        const activeEntry = stmt.get(session.id);
+        const activeEntry = await queryOne(`
+            SELECT t.*, p.name as project_name 
+            FROM time_entries t
+            JOIN projects p ON t.project_id = p.id
+            WHERE t.user_id = ? AND t.end_time IS NULL
+        `, [session.id]);
 
         return NextResponse.json({
             activeEntry: activeEntry || null

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { query, queryOne, execute } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 async function ensureAdmin() {
@@ -11,22 +11,13 @@ async function ensureAdmin() {
 }
 
 export async function GET() {
-    // Projects might be needed by employees too (to select one), so we might loosen auth here later
-    // or create a separate public/employee endpoint. For now, let's allow authenticated users to view active projects
-    // but let's stick to the Admin Management context first.
-
     const session = await getSession();
     if (!session) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     try {
-        // If admin, return all. If employee, maybe only active ones?
-        // For this specific management route, let's assume it's for the admin table.
-        // We will create a robust query.
-
-        const stmt = db.prepare('SELECT * FROM projects ORDER BY active DESC, name ASC');
-        const projects = stmt.all();
+        const projects = await query('SELECT * FROM projects ORDER BY active DESC, name ASC');
         return NextResponse.json(projects);
     } catch (error) {
         return NextResponse.json({ error: 'Error al obtener proyectos' }, { status: 500 });
@@ -45,13 +36,12 @@ export async function POST(request) {
             return NextResponse.json({ error: 'El nombre del proyecto es requerido' }, { status: 400 });
         }
 
-        const checkStmt = db.prepare('SELECT id FROM projects WHERE name = ?');
-        if (checkStmt.get(name)) {
+        const existingProject = await queryOne('SELECT id FROM projects WHERE name = ?', [name]);
+        if (existingProject) {
             return NextResponse.json({ error: 'Ya existe un proyecto con este nombre' }, { status: 409 });
         }
 
-        const insertStmt = db.prepare('INSERT INTO projects (name) VALUES (?)');
-        const result = insertStmt.run(name);
+        const result = await execute('INSERT INTO projects (name) VALUES (?)', [name]);
 
         return NextResponse.json({
             success: true,

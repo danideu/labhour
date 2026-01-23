@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { queryOne, execute } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 // POST /api/entries/clock-in
@@ -17,17 +17,15 @@ export async function POST(request) {
         }
 
         // Check if already working
-        const checkStmt = db.prepare('SELECT id FROM time_entries WHERE user_id = ? AND end_time IS NULL');
-        if (checkStmt.get(session.id)) {
+        const activeEntry = await queryOne('SELECT id FROM time_entries WHERE user_id = ? AND end_time IS NULL', [session.id]);
+        if (activeEntry) {
             return NextResponse.json({ error: 'Ya tienes una jornada iniciada' }, { status: 409 });
         }
 
-        const insertStmt = db.prepare(`
-      INSERT INTO time_entries (user_id, project_id, start_time)
-      VALUES (?, ?, DATETIME('now', 'localtime'))
-    `); // Use localtime for simplicity in this demo, usually stick to UTC
-
-        insertStmt.run(session.id, projectId);
+        await execute(`
+            INSERT INTO time_entries (user_id, project_id, start_time)
+            VALUES (?, ?, DATETIME('now', 'localtime'))
+        `, [session.id, projectId]);
 
         return NextResponse.json({ success: true });
 
@@ -46,20 +44,17 @@ export async function PUT(request) {
 
     try {
         // Check if working
-        const checkStmt = db.prepare('SELECT id FROM time_entries WHERE user_id = ? AND end_time IS NULL');
-        const entry = checkStmt.get(session.id);
+        const entry = await queryOne('SELECT id FROM time_entries WHERE user_id = ? AND end_time IS NULL', [session.id]);
 
         if (!entry) {
             return NextResponse.json({ error: 'No tienes ninguna jornada activa' }, { status: 404 });
         }
 
-        const updateStmt = db.prepare(`
-      UPDATE time_entries 
-      SET end_time = DATETIME('now', 'localtime')
-      WHERE id = ?
-    `);
-
-        updateStmt.run(entry.id);
+        await execute(`
+            UPDATE time_entries 
+            SET end_time = DATETIME('now', 'localtime')
+            WHERE id = ?
+        `, [entry.id]);
 
         return NextResponse.json({ success: true });
 

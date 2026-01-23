@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { queryOne } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { createSession } from '@/lib/auth';
 
@@ -11,8 +11,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Email y contraseña son requeridos' }, { status: 400 });
         }
 
-        const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
-        const user = stmt.get(email);
+        const user = await queryOne('SELECT * FROM users WHERE email = ?', [email]);
 
         if (!user) {
             return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });

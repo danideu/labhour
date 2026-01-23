@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { queryOne, execute } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 export async function PUT(request) {
@@ -21,7 +21,7 @@ export async function PUT(request) {
         }
 
         // Get current user with password
-        const user = db.prepare('SELECT password FROM users WHERE id = ?').get(session.id);
+        const user = await queryOne('SELECT password FROM users WHERE id = ?', [session.id]);
         if (!user) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }
@@ -36,7 +36,7 @@ export async function PUT(request) {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
         // Update password
-        db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashedPassword, session.id);
+        await execute('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, session.id]);
 
         return NextResponse.json({ success: true, message: 'Contraseña actualizada correctamente' });
     } catch (error) {

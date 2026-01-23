@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { execute, query } from '@/lib/db';
 import { createAuditLog, AUDIT_ACTIONS } from '@/lib/audit';
 import { notifyAllAdmins } from '@/lib/notifications';
 
@@ -44,25 +44,23 @@ export async function POST(request) {
         const deviceId = request.headers.get('x-device-id') || null;
 
         // Create the manual entry with PENDING status
-        const stmt = db.prepare(`
+        const result = await execute(`
             INSERT INTO time_entries (
                 user_id, project_id, start_time, end_time, 
                 entry_type, validation_status, justification, server_timestamp
             ) VALUES (?, ?, ?, ?, 'MANUAL', 'PENDING', ?, DATETIME('now', 'localtime'))
-        `);
-
-        const result = stmt.run(
+        `, [
             session.id,
             projectId,
             startDateTime,
             endDateTime,
             justification.trim()
-        );
+        ]);
 
         const entryId = result.lastInsertRowid;
 
         // Create audit log
-        createAuditLog({
+        await createAuditLog({
             userId: session.id,
             actionType: AUDIT_ACTIONS.CREATE_MANUAL_ENTRY,
             entityType: 'time_entry',
@@ -109,16 +107,15 @@ export async function GET(request) {
         }
 
         // Get user's manual entries
-        const stmt = db.prepare(`
+        const entries = await query(`
             SELECT t.*, p.name as project_name
             FROM time_entries t
             JOIN projects p ON t.project_id = p.id
             WHERE t.user_id = ? AND t.entry_type = 'MANUAL'
             ORDER BY t.created_at DESC
             LIMIT 50
-        `);
+        `, [session.id]);
 
-        const entries = stmt.all(session.id);
         return NextResponse.json(entries);
 
     } catch (error) {

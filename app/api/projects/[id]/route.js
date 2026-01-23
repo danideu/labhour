@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { queryOne, execute } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 async function ensureAdmin() {
@@ -15,31 +15,29 @@ export async function PUT(request, { params }) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     try {
         const { name, active } = await request.json();
 
-        const projectStmt = db.prepare('SELECT * FROM projects WHERE id = ?');
-        const existingProject = projectStmt.get(id);
+        const existingProject = await queryOne('SELECT * FROM projects WHERE id = ?', [id]);
 
         if (!existingProject) {
             return NextResponse.json({ error: 'Proyecto no encontrado' }, { status: 404 });
         }
 
         if (name && name !== existingProject.name) {
-            const checkStmt = db.prepare('SELECT id FROM projects WHERE name = ?');
-            if (checkStmt.get(name)) {
+            const duplicateName = await queryOne('SELECT id FROM projects WHERE name = ?', [name]);
+            if (duplicateName) {
                 return NextResponse.json({ error: 'Ya existe un proyecto con este nombre' }, { status: 409 });
             }
         }
 
-        const updateStmt = db.prepare('UPDATE projects SET name = ?, active = ? WHERE id = ?');
-        updateStmt.run(
+        await execute('UPDATE projects SET name = ?, active = ? WHERE id = ?', [
             name || existingProject.name,
             active !== undefined ? (active ? 1 : 0) : existingProject.active,
             id
-        );
+        ]);
 
         return NextResponse.json({ success: true, message: 'Proyecto actualizado' });
 
@@ -54,12 +52,11 @@ export async function DELETE(request, { params }) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     try {
         // Check references in time_entries
-        const checkStmt = db.prepare('SELECT count(*) as count FROM time_entries WHERE project_id = ?');
-        const result = checkStmt.get(id);
+        const result = await queryOne('SELECT count(*) as count FROM time_entries WHERE project_id = ?', [id]);
 
         if (result.count > 0) {
             return NextResponse.json({
@@ -67,8 +64,7 @@ export async function DELETE(request, { params }) {
             }, { status: 400 });
         }
 
-        const deleteStmt = db.prepare('DELETE FROM projects WHERE id = ?');
-        deleteStmt.run(id);
+        await execute('DELETE FROM projects WHERE id = ?', [id]);
 
         return NextResponse.json({ success: true, message: 'Proyecto eliminado' });
 

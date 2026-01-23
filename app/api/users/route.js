@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { query, queryOne, execute } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { getSession } from '@/lib/auth';
 
@@ -18,8 +18,7 @@ export async function GET() {
     }
 
     try {
-        const stmt = db.prepare('SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC');
-        const users = stmt.all();
+        const users = await query('SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC');
         return NextResponse.json(users);
     } catch (error) {
         return NextResponse.json({ error: 'Error al obtener usuarios' }, { status: 500 });
@@ -39,14 +38,13 @@ export async function POST(request) {
         }
 
         // Check unique email
-        const checkStmt = db.prepare('SELECT id FROM users WHERE email = ?');
-        if (checkStmt.get(email)) {
+        const existingUser = await queryOne('SELECT id FROM users WHERE email = ?', [email]);
+        if (existingUser) {
             return NextResponse.json({ error: 'El email ya está registrado' }, { status: 409 });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const insertStmt = db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)');
-        const result = insertStmt.run(name, email, hashedPassword, role);
+        const result = await execute('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', [name, email, hashedPassword, role]);
 
         return NextResponse.json({
             success: true,

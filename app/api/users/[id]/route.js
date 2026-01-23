@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { queryOne, execute } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { getSession } from '@/lib/auth';
 
@@ -16,14 +16,13 @@ export async function PUT(request, { params }) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     try {
         const { name, email, password, role } = await request.json();
 
         // Check if user exists
-        const userStmt = db.prepare('SELECT * FROM users WHERE id = ?');
-        const existingUser = userStmt.get(id);
+        const existingUser = await queryOne('SELECT * FROM users WHERE id = ?', [id]);
 
         if (!existingUser) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
@@ -31,8 +30,8 @@ export async function PUT(request, { params }) {
 
         // If updating email, check uniqueness
         if (email !== existingUser.email) {
-            const checkStmt = db.prepare('SELECT id FROM users WHERE email = ?');
-            if (checkStmt.get(email)) {
+            const duplicateEmail = await queryOne('SELECT id FROM users WHERE email = ?', [email]);
+            if (duplicateEmail) {
                 return NextResponse.json({ error: 'El email ya está en uso' }, { status: 409 });
             }
         }
@@ -49,8 +48,7 @@ export async function PUT(request, { params }) {
         updateQuery += ' WHERE id = ?';
         args.push(id);
 
-        const updateStmt = db.prepare(updateQuery);
-        updateStmt.run(...args);
+        await execute(updateQuery, args);
 
         return NextResponse.json({ success: true, message: 'Usuario actualizado' });
 
@@ -65,7 +63,7 @@ export async function DELETE(request, { params }) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Prevent self-deletion
     const session = await getSession();
@@ -75,8 +73,7 @@ export async function DELETE(request, { params }) {
 
     try {
         // Check references
-        const checkStmt = db.prepare('SELECT count(*) as count FROM time_entries WHERE user_id = ?');
-        const result = checkStmt.get(id);
+        const result = await queryOne('SELECT count(*) as count FROM time_entries WHERE user_id = ?', [id]);
 
         if (result.count > 0) {
             return NextResponse.json({
@@ -84,8 +81,7 @@ export async function DELETE(request, { params }) {
             }, { status: 400 });
         }
 
-        const deleteStmt = db.prepare('DELETE FROM users WHERE id = ?');
-        deleteStmt.run(id);
+        await execute('DELETE FROM users WHERE id = ?', [id]);
 
         return NextResponse.json({ success: true, message: 'Usuario eliminado' });
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { query } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 async function ensureAdmin() {
@@ -22,44 +22,41 @@ export async function GET(request) {
     const endDate = searchParams.get('endDate');
 
     try {
-        let query = `
-      SELECT t.*, u.name as user_name, p.name as project_name
-      FROM time_entries t
-      JOIN users u ON t.user_id = u.id
-      JOIN projects p ON t.project_id = p.id
-      WHERE 1=1
-    `;
+        let sql = `
+            SELECT t.*, u.name as user_name, p.name as project_name
+            FROM time_entries t
+            JOIN users u ON t.user_id = u.id
+            JOIN projects p ON t.project_id = p.id
+            WHERE 1=1
+        `;
         const params = [];
 
         if (userId) {
-            query += ' AND t.user_id = ?';
+            sql += ' AND t.user_id = ?';
             params.push(userId);
         }
         if (projectId) {
-            query += ' AND t.project_id = ?';
+            sql += ' AND t.project_id = ?';
             params.push(projectId);
         }
         if (startDate) {
-            query += ' AND t.start_time >= ?';
-            // Ensure specific time or start of day
+            sql += ' AND t.start_time >= ?';
             const s = new Date(startDate);
             s.setHours(0, 0, 0, 0);
             params.push(s.toISOString().replace('T', ' ').split('.')[0]);
         }
         if (endDate) {
-            query += ' AND t.start_time <= ?';
-            // Ensure end of day
+            sql += ' AND t.start_time <= ?';
             const e = new Date(endDate);
             e.setHours(23, 59, 59, 999);
             params.push(e.toISOString().replace('T', ' ').split('.')[0]);
         }
 
-        query += ' ORDER BY t.start_time DESC';
+        sql += ' ORDER BY t.start_time DESC';
 
-        const stmt = db.prepare(query);
-        const entries = stmt.all(...params);
+        const entries = await query(sql, params);
 
-        // Calculate total hours in JS to handle null end_times (active) if needed or precise diffs
+        // Calculate total hours
         let totalHours = 0;
         const computedEntries = entries.map(entry => {
             let duration = 0;
@@ -67,8 +64,6 @@ export async function GET(request) {
                 const diff = new Date(entry.end_time) - new Date(entry.start_time);
                 duration = diff / (1000 * 60 * 60);
             } else {
-                // Option: Calculate until 'now' if active, or count as 0 for report until closed?
-                // Usually reports exclude active or calculate up to now. Let's calculate up to now for "Live estimation"
                 const diff = new Date() - new Date(entry.start_time);
                 duration = diff / (1000 * 60 * 60);
             }

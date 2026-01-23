@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { query, queryOne, execute } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { createNotification } from '@/lib/notifications';
 
@@ -18,15 +18,14 @@ export async function GET() {
     }
 
     try {
-        const stmt = db.prepare(`
-      SELECT a.*, u.name as user_name 
-      FROM absence_requests a
-      JOIN users u ON a.user_id = u.id
-      ORDER BY 
-        CASE WHEN a.status = 'PENDING' THEN 0 ELSE 1 END,
-        a.created_at DESC
-    `);
-        const absences = stmt.all();
+        const absences = await query(`
+            SELECT a.*, u.name as user_name 
+            FROM absence_requests a
+            JOIN users u ON a.user_id = u.id
+            ORDER BY 
+                CASE WHEN a.status = 'PENDING' THEN 0 ELSE 1 END,
+                a.created_at DESC
+        `);
         return NextResponse.json(absences);
     } catch (error) {
         return NextResponse.json({ error: 'Error al obtener listado' }, { status: 500 });
@@ -48,14 +47,13 @@ export async function PUT(request) {
         }
 
         // Get the absence to find out who to notify
-        const absence = db.prepare('SELECT * FROM absence_requests WHERE id = ?').get(id);
+        const absence = await queryOne('SELECT * FROM absence_requests WHERE id = ?', [id]);
         if (!absence) {
             return NextResponse.json({ error: 'Solicitud no encontrada' }, { status: 404 });
         }
 
         // Update the absence
-        const stmt = db.prepare('UPDATE absence_requests SET status = ?, admin_comments = ? WHERE id = ?');
-        stmt.run(status, adminComments || null, id);
+        await execute('UPDATE absence_requests SET status = ?, admin_comments = ? WHERE id = ?', [status, adminComments || null, id]);
 
         // Notify the employee
         const statusText = status === 'APPROVED' ? 'aprobada' : 'rechazada';
@@ -64,7 +62,7 @@ export async function PUT(request) {
             message += `. Comentario: "${adminComments}"`;
         }
 
-        createNotification({
+        await createNotification({
             userId: absence.user_id,
             type: status === 'APPROVED' ? 'ABSENCE_APPROVED' : 'ABSENCE_REJECTED',
             title: `Solicitud ${statusText}`,
