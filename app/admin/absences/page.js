@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Modal from '@/components/Modal';
 
-export default function AdminAbsencesPage() {
+function AdminAbsencesContent() {
     const searchParams = useSearchParams();
     const initialStatus = searchParams.get('status') || '';
 
@@ -218,5 +218,13 @@ export default function AdminAbsencesPage() {
                 )}
             </Modal>
         </div>
+    );
+}
+
+export default function AdminAbsencesPage() {
+    return (
+        <Suspense fallback={<div className="text-slate-400 text-center p-8">Cargando...</div>}>
+            <AdminAbsencesContent />
+        </Suspense>
     );
 }
