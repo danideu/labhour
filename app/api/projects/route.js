@@ -20,6 +20,7 @@ export async function GET() {
         const projects = await query('SELECT * FROM projects ORDER BY active DESC, name ASC');
         return NextResponse.json(projects);
     } catch (error) {
+        console.error('Error fetching projects:', error);
         return NextResponse.json({ error: 'Error al obtener proyectos' }, { status: 500 });
     }
 }
@@ -32,24 +33,26 @@ export async function POST(request) {
     try {
         const { name } = await request.json();
 
-        if (!name) {
+        if (!name || name.trim() === '') {
             return NextResponse.json({ error: 'El nombre del proyecto es requerido' }, { status: 400 });
         }
 
-        const existingProject = await queryOne('SELECT id FROM projects WHERE name = ?', [name]);
+        const trimmedName = name.trim();
+
+        const existingProject = await queryOne('SELECT id FROM projects WHERE name = ?', [trimmedName]);
         if (existingProject) {
             return NextResponse.json({ error: 'Ya existe un proyecto con este nombre' }, { status: 409 });
         }
 
-        const result = await execute('INSERT INTO projects (name) VALUES (?)', [name]);
+        const result = await execute('INSERT INTO projects (name) VALUES (?)', [trimmedName]);
 
         return NextResponse.json({
             success: true,
-            project: { id: result.lastInsertRowid, name, active: 1 }
+            project: { id: Number(result.lastInsertRowid), name: trimmedName, active: 1 }
         }, { status: 201 });
 
     } catch (error) {
         console.error('Error creating project:', error);
-        return NextResponse.json({ error: 'Error al crear proyecto' }, { status: 500 });
+        return NextResponse.json({ error: `Error al crear proyecto: ${error.message}` }, { status: 500 });
     }
 }
