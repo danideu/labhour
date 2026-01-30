@@ -16,8 +16,19 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'Contraseña actual y nueva son obligatorias' }, { status: 400 });
         }
 
-        if (newPassword.length < 6) {
-            return NextResponse.json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' }, { status: 400 });
+        if (newPassword.length < 8) {
+            return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 });
+        }
+
+        // Validar complejidad de contraseña
+        const hasUpperCase = /[A-Z]/.test(newPassword);
+        const hasLowerCase = /[a-z]/.test(newPassword);
+        const hasNumber = /[0-9]/.test(newPassword);
+
+        if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+            return NextResponse.json({
+                error: 'La contraseña debe contener al menos una mayúscula, una minúscula y un número'
+            }, { status: 400 });
         }
 
         // Get current user with password
