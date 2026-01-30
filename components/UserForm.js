@@ -109,6 +109,11 @@ export default function UserForm({ user, onSuccess, onCancel }) {
                     required={!user}
                     placeholder={user ? "••••••••" : ""}
                 />
+                {!user && (
+                    <p className="mt-1.5 text-xs text-slate-500">
+                        Mínimo 8 caracteres, incluir mayúscula, minúscula y número
+                    </p>
+                )}
             </div>
 
             {!user && (
