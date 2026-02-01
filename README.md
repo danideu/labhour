@@ -1,10 +1,13 @@
 # LabHour - Sistema de Control Horario
 
-![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
-![SQLite](https://img.shields.io/badge/SQLite-3-blue?logo=sqlite)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![Turso](https://img.shields.io/badge/Turso-SQLite-4FF8D2?logo=turso)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?logo=tailwind-css)
+![Vercel](https://img.shields.io/badge/Vercel-Deployed-000?logo=vercel)
 
 Sistema de control horario y gestión de jornadas laborales diseñado para cumplir con la normativa laboral española. Especialmente orientado al sector de la construcción con soporte para múltiples obras/proyectos.
+
+🌐 **URL de Producción**: [fichajes.ddrproyectos.com](https://fichajes.ddrproyectos.com)
 
 ## 🚀 Características
 
@@ -13,6 +16,7 @@ Sistema de control horario y gestión de jornadas laborales diseñado para cumpl
 - **Historial de jornadas** - Consulta de todos los fichajes con filtros
 - **Imputación manual** - Registro de jornadas retroactivas con justificación obligatoria
 - **Gestión de ausencias** - Solicitudes de vacaciones, bajas, permisos
+- **Notificaciones** - Alertas sobre aprobaciones, rechazos y recordatorios
 
 ### Para Administradores
 - **Dashboard en tiempo real** - Métricas, gráficas y actividad en vivo
@@ -20,6 +24,7 @@ Sistema de control horario y gestión de jornadas laborales diseñado para cumpl
 - **Gestión de empleados y proyectos** - CRUD completo
 - **Sistema de recordatorios** - Avisos a empleados que no han fichado
 - **Logs de auditoría** - Registro inmutable para Inspección de Trabajo
+- **Panel de seguridad** - Gestión de IPs bloqueadas
 - **Informes y exportación CSV**
 
 ### Cumplimiento Normativo
@@ -31,20 +36,41 @@ Sistema de control horario y gestión de jornadas laborales diseñado para cumpl
 
 ## 📦 Tecnologías
 
-- **Frontend**: Next.js 15, React 19, Tailwind CSS 3
-- **Backend**: Next.js API Routes
-- **Base de datos**: SQLite (better-sqlite3)
-- **Autenticación**: JWT con jose
+| Componente | Tecnología |
+|------------|------------|
+| **Frontend** | Next.js 16, React 19, Tailwind CSS |
+| **Backend** | Next.js API Routes |
+| **Base de datos** | Turso (SQLite cloud) |
+| **Autenticación** | JWT con jose + bcrypt |
+| **Hosting** | Vercel |
+| **Dominio** | Namecheap |
 
-## 🛠️ Instalación
+## 🔒 Seguridad Implementada
+
+- ✅ Contraseñas hasheadas con bcrypt (salt factor 10)
+- ✅ Tokens JWT con clave secreta segura
+- ✅ Cookies httpOnly, secure, sameSite
+- ✅ Headers de seguridad HTTP (X-Frame-Options, X-Content-Type-Options, etc.)
+- ✅ Rate limiting en login (5 intentos → bloqueo 15 min)
+- ✅ Aviso preventivo en 4º intento fallido
+- ✅ Panel admin para desbloquear IPs
+- ✅ Validación de contraseñas (8+ chars, mayúscula, minúscula, número)
+- ✅ Middleware de protección por rol
+- ✅ Logs de auditoría inmutables
+
+## 🛠️ Instalación Local
 
 ```bash
 # Clonar repositorio
-git clone <url-del-repo>
-cd WEB
+git clone https://github.com/danideu/labhour.git
+cd labhour
 
 # Instalar dependencias
 npm install
+
+# Configurar variables de entorno
+cp .env.example .env.local
+# Editar .env.local con tus credenciales de Turso
 
 # Iniciar en desarrollo
 npm run dev
@@ -52,22 +78,39 @@ npm run dev
 
 Abrir [http://localhost:3000](http://localhost:3000)
 
-### Usuario Admin por defecto
-- **Email**: admin@empresa.com
-- **Contraseña**: admin123
+## ⚙️ Variables de Entorno
+
+```env
+# Turso Database
+TURSO_DATABASE_URL=libsql://tu-base-de-datos.turso.io
+TURSO_AUTH_TOKEN=tu-token-de-turso
+
+# JWT Secret (generar con: openssl rand -base64 32)
+JWT_SECRET=tu-clave-secreta-segura
+```
 
 ## 📁 Estructura del Proyecto
 
 ```
 ├── app/
-│   ├── admin/          # Páginas del panel administrador
-│   ├── dashboard/      # Páginas del panel empleado
-│   ├── api/            # API Routes
-│   └── globals.css     # Estilos globales con variables CSS
-├── components/         # Componentes reutilizables
-├── lib/                # Utilidades (auth, db, audit, notifications)
-├── database.sqlite     # Base de datos SQLite
-└── middleware.js       # Protección de rutas
+│   ├── admin/           # Panel administrador
+│   │   ├── users/       # Gestión de empleados
+│   │   ├── projects/    # Gestión de proyectos/obras
+│   │   ├── absences/    # Gestión de ausencias
+│   │   ├── reports/     # Informes y exportación
+│   │   ├── audit-logs/  # Logs de auditoría
+│   │   └── security/    # IPs bloqueadas
+│   ├── dashboard/       # Panel empleado
+│   ├── api/             # API Routes
+│   └── globals.css      # Estilos globales
+├── components/          # Componentes reutilizables
+├── lib/
+│   ├── db.js           # Conexión Turso + inicialización
+│   ├── auth.js         # Gestión de sesiones JWT
+│   ├── audit.js        # Logs de auditoría
+│   ├── notifications.js # Sistema de notificaciones
+│   └── rateLimit.js    # Rate limiting de login
+└── middleware.js        # Protección de rutas
 ```
 
 ## 🎨 Modo Claro/Oscuro
@@ -84,12 +127,19 @@ La aplicación incluye un toggle de tema (icono sol/luna) que permite alternar e
 6. El empleado recibe notificación del resultado
 7. Todo queda registrado para la Inspección de Trabajo
 
-## 🔒 Seguridad
+## � Despliegue
 
-- Contraseñas hasheadas con bcrypt
-- Tokens JWT con expiración configurable
-- Middleware de protección por rol
-- Logs de auditoría inmutables
+El proyecto está configurado para despliegue automático:
+
+1. **Push a GitHub** → Vercel detecta cambios automáticamente
+2. **Build** → Vercel compila el proyecto
+3. **Deploy** → Cambios disponibles en ~30-60 segundos
+
+```bash
+git add .
+git commit -m "descripción del cambio"
+git push origin main
+```
 
 ## 📄 Licencia
 
