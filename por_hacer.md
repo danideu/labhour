@@ -10,6 +10,9 @@ Login:
 user: admin@empresa.com
 pass: admin123
 
+email: tomas_db@yahoo.es
+pass: 4k'QgQnR3\0-';6j'w
+
 
 Para arrancar Ngrok y que pueda ver el cliente la web:
 ngrok http 3000
