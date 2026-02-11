@@ -16,7 +16,7 @@ export async function GET(request) {
         const limit = parseInt(searchParams.get('limit')) || 100;
         const offset = parseInt(searchParams.get('offset')) || 0;
 
-        const logs = getAuditLogs({
+        const logs = await getAuditLogs({
             userId: userId ? parseInt(userId) : null,
             actionType,
             entityType,
