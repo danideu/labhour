@@ -47,11 +47,26 @@ export default function UserForm({ user, onSuccess, onCancel }) {
         setLoading(true);
         setError('');
 
-        // Validar que las contraseñas coinciden al crear un nuevo usuario
-        if (!user && formData.password !== formData.confirmPassword) {
-            setError('Las contraseñas no coinciden');
-            setLoading(false);
-            return;
+        // Validar contraseña si se ha introducido una (obligatorio al crear, opcional al editar)
+        if (formData.password) {
+            if (formData.password.length < 8) {
+                setError('La contraseña debe tener al menos 8 caracteres');
+                setLoading(false);
+                return;
+            }
+            const hasUpperCase = /[A-Z]/.test(formData.password);
+            const hasLowerCase = /[a-z]/.test(formData.password);
+            const hasNumber = /[0-9]/.test(formData.password);
+            if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+                setError('La contraseña debe incluir al menos una mayúscula, una minúscula y un número');
+                setLoading(false);
+                return;
+            }
+            if (formData.password !== formData.confirmPassword) {
+                setError('Las contraseñas no coinciden');
+                setLoading(false);
+                return;
+            }
         }
 
         try {
@@ -137,14 +152,14 @@ export default function UserForm({ user, onSuccess, onCancel }) {
                         {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                     </button>
                 </div>
-                {!user && (
+                {(!user || formData.password) && (
                     <p className="mt-1.5 text-xs text-slate-500">
                         Mínimo 8 caracteres, incluir mayúscula, minúscula y número
                     </p>
                 )}
             </div>
 
-            {!user && (
+            {(!user || formData.password) && (
                 <div>
                     <label className="block text-sm font-medium mb-1 text-slate-300">
                         Confirmar Contraseña
@@ -154,7 +169,7 @@ export default function UserForm({ user, onSuccess, onCancel }) {
                             type={showConfirmPassword ? "text" : "password"}
                             value={formData.confirmPassword}
                             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                            required
+                            required={!user || !!formData.password}
                             placeholder="Repite la contraseña"
                             className="pr-10"
                         />

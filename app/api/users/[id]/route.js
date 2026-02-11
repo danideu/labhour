@@ -40,6 +40,17 @@ export async function PUT(request, { params }) {
         let args = [name, email, role];
 
         if (password) {
+            // Validar requisitos de contraseña
+            if (password.length < 8) {
+                return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 });
+            }
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+                return NextResponse.json({ error: 'La contraseña debe incluir al menos una mayúscula, una minúscula y un número' }, { status: 400 });
+            }
+
             const hashedPassword = await bcrypt.hash(password, 10);
             updateQuery += ', password = ?';
             args.push(hashedPassword);
