@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
 import UserForm from '@/components/UserForm';
 
 export default function UsersPage() {
+    const router = useRouter();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,6 +14,7 @@ export default function UsersPage() {
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
+    const [impersonating, setImpersonating] = useState(null);
 
     // Filter users based on search and role
     const filteredUsers = users.filter(user => {
@@ -70,6 +73,29 @@ export default function UsersPage() {
     function handleFormSuccess() {
         setIsModalOpen(false);
         fetchUsers();
+    }
+
+    async function handleImpersonate(user) {
+        if (!confirm(`¿Iniciar sesión como "${user.name}"? Podrás volver a tu cuenta de administrador en cualquier momento.`)) return;
+
+        setImpersonating(user.id);
+        try {
+            const res = await fetch('/api/admin/impersonate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Error al impersonar');
+            }
+
+            router.push('/dashboard');
+        } catch (err) {
+            alert(err.message);
+            setImpersonating(null);
+        }
     }
 
     return (
@@ -159,6 +185,20 @@ export default function UsersPage() {
                                             {new Date(user.created_at).toLocaleDateString('es-ES')}
                                         </td>
                                         <td className="p-4 text-right">
+                                            {user.role === 'employee' && (
+                                                <button
+                                                    onClick={() => handleImpersonate(user)}
+                                                    disabled={impersonating === user.id}
+                                                    className="text-slate-400 hover:text-amber-400 mr-3 transition-colors disabled:opacity-50"
+                                                    title="Ver como este empleado"
+                                                >
+                                                    {impersonating === user.id ? (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                                                    )}
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => handleEdit(user)}
                                                 className="text-slate-400 hover:text-white mr-3 transition-colors"

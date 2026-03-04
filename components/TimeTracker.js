@@ -101,11 +101,18 @@ export default function TimeTracker() {
     // Calculate elapsed time if working
     const getElapsed = () => {
         if (!activeEntry) return '00:00:00';
-        const start = new Date(activeEntry.start_time).getTime();
+
+        // La BD guarda el start_time en UTC sin sufijo 'Z'.
+        // Si lo parseamos directamente con new Date(), el navegador lo interpreta
+        // como hora LOCAL, causando un desfase de +1h en España (UTC+1).
+        // Añadimos 'Z' para forzar la interpretación como UTC.
+        const rawStart = activeEntry.start_time;
+        const startStr = rawStart.endsWith('Z') || rawStart.includes('+') ? rawStart : rawStart + 'Z';
+        const start = new Date(startStr).getTime();
         const current = now.getTime();
         const diff = current - start;
 
-        if (diff < 0) return '00:00:00'; // Should not happen with synced times
+        if (diff < 0) return '00:00:00';
 
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));

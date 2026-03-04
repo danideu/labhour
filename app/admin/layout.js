@@ -3,16 +3,27 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import LogoutButton from '@/components/LogoutButton';
 import NotificationBell from '@/components/NotificationBell';
 import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
 
 export default function AdminLayout({ children }) {
+    const router = useRouter();
     const [collapsed, setCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isImpersonating, setIsImpersonating] = useState(false);
+    const [restoringSession, setRestoringSession] = useState(false);
     const pathname = usePathname();
+
+    useEffect(() => {
+        // Comprobar si estamos en modo impersonación
+        fetch('/api/admin/restore-session')
+            .then(r => r.json())
+            .then(data => setIsImpersonating(data.isImpersonating))
+            .catch(() => { });
+    }, [pathname]);
 
     useEffect(() => {
         const saved = localStorage.getItem('admin-sidebar-collapsed');
@@ -40,6 +51,17 @@ export default function AdminLayout({ children }) {
         localStorage.setItem('admin-sidebar-collapsed', String(newState));
     }
 
+    async function restoreSession() {
+        setRestoringSession(true);
+        try {
+            await fetch('/api/admin/restore-session', { method: 'POST' });
+            router.push('/admin/users');
+            router.refresh();
+        } catch {
+            setRestoringSession(false);
+        }
+    }
+
     const navItems = [
         { href: '/admin', label: 'Dashboard', icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg> },
         { href: '/admin/users', label: 'Empleados', icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
@@ -55,8 +77,30 @@ export default function AdminLayout({ children }) {
 
     return (
         <div className="min-h-screen bg-[#0a0a0a]">
-            {/* Desktop Layout */}
-            <div className={`hidden md:grid ${collapsed ? 'grid-cols-[72px_1fr]' : 'grid-cols-[250px_1fr]'} min-h-screen transition-all duration-300`}>
+            {/* Banner de impersonación */}
+            {isImpersonating && (
+                <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500 text-black px-4 py-2 flex items-center justify-between text-sm font-medium shadow-lg">
+                    <div className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                        <span>Estás navegando como empleado (modo previsualización)</span>
+                    </div>
+                    <button
+                        onClick={restoreSession}
+                        disabled={restoringSession}
+                        className="flex items-center gap-1.5 bg-black/20 hover:bg-black/30 text-black font-semibold px-3 py-1 rounded-full transition-colors disabled:opacity-60"
+                    >
+                        {restoringSession ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" /></svg>
+                        )}
+                        Volver a tu cuenta
+                    </button>
+                </div>
+            )}
+
+            {/* Desktop Layout - añadir padding top si hay banner */}
+            <div className={`hidden md:grid ${isImpersonating ? 'pt-10' : ''} ${collapsed ? 'grid-cols-[72px_1fr]' : 'grid-cols-[250px_1fr]'} min-h-screen transition-all duration-300`}>
                 {/* Sidebar */}
                 <aside className="border-r border-white/10 bg-black/40 backdrop-blur-xl p-4 flex flex-col">
                     <div className={`mb-6 ${collapsed ? 'text-center' : 'pl-3'}`}>
