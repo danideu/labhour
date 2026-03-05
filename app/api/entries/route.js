@@ -24,7 +24,7 @@ export async function POST(request) {
 
         await execute(`
             INSERT INTO time_entries (user_id, project_id, start_time)
-            VALUES (?, ?, DATETIME('now', 'localtime'))
+            VALUES (?, ?, DATETIME('now'))
         `, [session.id, projectId]);
 
         return NextResponse.json({ success: true });
@@ -52,7 +52,7 @@ export async function PUT(request) {
 
         await execute(`
             UPDATE time_entries 
-            SET end_time = DATETIME('now', 'localtime')
+            SET end_time = DATETIME('now')
             WHERE id = ?
         `, [entry.id]);
 

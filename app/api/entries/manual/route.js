@@ -48,7 +48,7 @@ export async function POST(request) {
             INSERT INTO time_entries (
                 user_id, project_id, start_time, end_time, 
                 entry_type, validation_status, justification, server_timestamp
-            ) VALUES (?, ?, ?, ?, 'MANUAL', 'PENDING', ?, DATETIME('now', 'localtime'))
+            ) VALUES (?, ?, ?, ?, 'MANUAL', 'PENDING', ?, DATETIME('now'))
         `, [
             session.id,
             projectId,

@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import ReportsTable from '@/components/ReportsTable';
 
+// Convierte strings de Turso (UTC sin Z) a Date correctos
+function parseUTC(str) {
+    if (!str) return new Date(NaN);
+    return new Date(str.includes('Z') || str.includes('+') ? str : str.replace(' ', 'T') + 'Z');
+}
+
 export default function ReportsPage() {
     const [users, setUsers] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -50,11 +56,11 @@ export default function ReportsPage() {
 
         const headers = ['Fecha', 'Empleado', 'Proyecto', 'Entrada', 'Salida', 'Duración (horas)'];
         const rows = reportData.entries.map(entry => [
-            new Date(entry.start_time).toLocaleDateString('es-ES'),
+            parseUTC(entry.start_time).toLocaleDateString('es-ES'),
             entry.user_name,
             entry.project_name,
-            new Date(entry.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-            entry.end_time ? new Date(entry.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : 'En curso',
+            parseUTC(entry.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+            entry.end_time ? parseUTC(entry.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : 'En curso',
             entry.duration ? entry.duration.toFixed(2) : '0.00'
         ]);
 
@@ -92,11 +98,11 @@ export default function ReportsPage() {
 
         const rows = reportData.entries.map(entry => `
             <tr>
-                <td>${new Date(entry.start_time).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
+                <td>${parseUTC(entry.start_time).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
                 <td>${entry.user_name}</td>
                 <td>${entry.project_name}</td>
-                <td class="mono">${new Date(entry.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</td>
-                <td class="mono">${entry.end_time ? new Date(entry.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '<span class="badge-active">Activo</span>'}</td>
+                <td class="mono">${parseUTC(entry.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</td>
+                <td class="mono">${entry.end_time ? parseUTC(entry.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '<span class="badge-active">Activo</span>'}</td>
                 <td class="mono right">${formatDurationPDF(entry.duration)}</td>
             </tr>
         `).join('');
@@ -283,7 +289,7 @@ export default function ReportsPage() {
                         disabled={!reportData?.entries?.length}
                         className="btn btn-outline px-6 flex items-center gap-2 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/50 disabled:opacity-30 disabled:cursor-not-allowed"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
                         Exportar PDF
                     </button>
                     <button

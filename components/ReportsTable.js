@@ -1,5 +1,11 @@
 'use client';
 
+// Convierte strings de Turso (UTC sin Z) a Date correctos
+function parseUTC(str) {
+    if (!str) return new Date(NaN);
+    return new Date(str.includes('Z') || str.includes('+') ? str : str.replace(' ', 'T') + 'Z');
+}
+
 function formatDuration(hours) {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
@@ -45,15 +51,15 @@ export default function ReportsTable({ entries, totalHours }) {
                             {entries.map((entry) => (
                                 <tr key={entry.id} className="hover:bg-white/5 transition-colors">
                                     <td className="p-4 text-slate-300 whitespace-nowrap">
-                                        {new Date(entry.start_time).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                        {parseUTC(entry.start_time).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                     </td>
                                     <td className="p-4 font-medium text-white">{entry.user_name}</td>
                                     <td className="p-4 text-slate-300">{entry.project_name}</td>
                                     <td className="p-4 text-slate-400 font-mono">
-                                        {new Date(entry.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                        {parseUTC(entry.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                                     </td>
                                     <td className="p-4 text-slate-400 font-mono">
-                                        {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) :
+                                        {entry.end_time ? parseUTC(entry.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) :
                                             <span className="text-green-500 text-xs px-2 py-1 bg-green-500/10 rounded-full">Activo</span>
                                         }
                                     </td>

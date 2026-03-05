@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
 
+// Convierte strings de Turso (UTC sin Z) a Date correctos
+function parseUTC(str) {
+    if (!str) return new Date(NaN);
+    return new Date(str.includes('Z') || str.includes('+') ? str : str.replace(' ', 'T') + 'Z');
+}
+
 export default function PendingEntriesPage() {
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -71,7 +77,7 @@ export default function PendingEntriesPage() {
     }
 
     function formatDate(dateStr) {
-        return new Date(dateStr).toLocaleDateString('es-ES', {
+        return parseUTC(dateStr).toLocaleDateString('es-ES', {
             weekday: 'short',
             day: 'numeric',
             month: 'short'
@@ -79,14 +85,14 @@ export default function PendingEntriesPage() {
     }
 
     function formatTime(dateStr) {
-        return new Date(dateStr).toLocaleTimeString('es-ES', {
+        return parseUTC(dateStr).toLocaleTimeString('es-ES', {
             hour: '2-digit',
             minute: '2-digit'
         });
     }
 
     function calculateDuration(start, end) {
-        const diff = new Date(end) - new Date(start);
+        const diff = parseUTC(end) - parseUTC(start);
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         return `${hours}h ${mins}m`;
@@ -108,10 +114,10 @@ export default function PendingEntriesPage() {
                         key={status}
                         onClick={() => setFilter(status)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === status
-                                ? status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                                    : status === 'VALIDATED' ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
+                            ? status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                                : status === 'VALIDATED' ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
                             }`}
                     >
                         {status === 'PENDING' ? 'Pendientes' : status === 'VALIDATED' ? 'Aprobadas' : 'Rechazadas'}
@@ -162,7 +168,7 @@ export default function PendingEntriesPage() {
                                     {/* Server Timestamp */}
                                     <div className="text-xs text-slate-600">
                                         <p>Registrado:</p>
-                                        <p>{new Date(entry.server_timestamp || entry.created_at).toLocaleString('es-ES')}</p>
+                                        <p>{parseUTC(entry.server_timestamp || entry.created_at).toLocaleString('es-ES')}</p>
                                     </div>
 
                                     {/* Actions */}
@@ -230,8 +236,8 @@ export default function PendingEntriesPage() {
                             onClick={handleConfirm}
                             disabled={processing}
                             className={`flex-1 py-2 rounded-lg font-medium transition-colors ${action === 'VALIDATED'
-                                    ? 'bg-green-500 text-white hover:bg-green-600'
-                                    : 'bg-red-500 text-white hover:bg-red-600'
+                                ? 'bg-green-500 text-white hover:bg-green-600'
+                                : 'bg-red-500 text-white hover:bg-red-600'
                                 } disabled:opacity-50`}
                         >
                             {processing ? 'Procesando...' : action === 'VALIDATED' ? 'Aprobar' : 'Rechazar'}

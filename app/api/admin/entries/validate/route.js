@@ -67,7 +67,7 @@ export async function PUT(request) {
         // Update entry status
         await execute(`
             UPDATE time_entries
-            SET validation_status = ?, validated_by = ?, validated_at = DATETIME('now', 'localtime')
+            SET validation_status = ?, validated_by = ?, validated_at = DATETIME('now')
             WHERE id = ?
         `, [action, session.id, entryId]);
 
@@ -90,7 +90,8 @@ export async function PUT(request) {
 
         // Notify employee
         const statusText = action === 'VALIDATED' ? 'aprobada' : 'rechazada';
-        let message = `Tu imputación manual del ${new Date(entry.start_time).toLocaleDateString('es-ES')} ha sido ${statusText}.`;
+        const parseUTC = str => str ? new Date(str.includes('Z') || str.includes('+') ? str : str.replace(' ', 'T') + 'Z') : new Date(NaN);
+        let message = `Tu imputación manual del ${parseUTC(entry.start_time).toLocaleDateString('es-ES')} ha sido ${statusText}.`;
         if (adminComment) {
             message += ` Comentario: "${adminComment}"`;
         }

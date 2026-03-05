@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from 'react';
 
+// Convierte strings de Turso (UTC sin Z) a Date correctos
+function parseUTC(str) {
+    if (!str) return new Date(NaN);
+    return new Date(str.includes('Z') || str.includes('+') ? str : str.replace(' ', 'T') + 'Z');
+}
+
 export default function HistoryPage() {
     const [entries, setEntries] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -47,7 +53,7 @@ export default function HistoryPage() {
 
     function formatDuration(start, end) {
         if (!end) return 'En curso';
-        const diff = new Date(end) - new Date(start);
+        const diff = parseUTC(end) - parseUTC(start);
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         return `${hours}h ${minutes}m`;
@@ -155,7 +161,7 @@ export default function HistoryPage() {
                                 entries.map((entry) => (
                                     <tr key={entry.id} className="hover:bg-white/5 transition-colors">
                                         <td className="p-4 text-slate-300">
-                                            {new Date(entry.start_time).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                            {parseUTC(entry.start_time).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
                                         </td>
                                         <td className="p-4 font-medium text-white">{entry.project_name}</td>
                                         <td className="p-4">
@@ -179,10 +185,10 @@ export default function HistoryPage() {
                                             </div>
                                         </td>
                                         <td className="p-4 text-slate-400">
-                                            {new Date(entry.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                            {parseUTC(entry.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                                         </td>
                                         <td className="p-4 text-slate-400">
-                                            {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                            {entry.end_time ? parseUTC(entry.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '-'}
                                         </td>
                                         <td className="p-4 text-right font-mono text-slate-300">
                                             <span className={!entry.end_time ? "text-green-400 font-bold" : ""}>

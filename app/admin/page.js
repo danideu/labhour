@@ -4,6 +4,12 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import TeamStatusWidget from '@/components/TeamStatusWidget';
 
+// Convierte strings de Turso (UTC sin Z) a Date correctos
+function parseUTC(str) {
+    if (!str) return new Date(NaN);
+    return new Date(str.includes('Z') || str.includes('+') ? str : str.replace(' ', 'T') + 'Z');
+}
+
 export default function AdminDashboard() {
     const [data, setData] = useState(null);
     const [charts, setCharts] = useState(null);
@@ -128,7 +134,7 @@ export default function AdminDashboard() {
                                         <td className="py-3 font-medium text-white">{item.user_name}</td>
                                         <td className="py-3 text-slate-300">{item.project_name}</td>
                                         <td className="py-3 text-slate-500">
-                                            {new Date(item.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                            {parseUTC(item.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                                         </td>
                                         <td className="py-3 text-right font-mono text-green-400">
                                             En curso
