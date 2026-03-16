@@ -29,6 +29,13 @@ export async function POST(request) {
 
         const user = await queryOne('SELECT * FROM users WHERE email = ?', [email]);
 
+        if (user && !user.active && user.active !== undefined) {
+            return NextResponse.json({
+                error: 'Esta cuenta ha sido desactivada. Contacta con un administrador.',
+                blocked: true
+            }, { status: 403 });
+        }
+
         if (!user) {
             // Registrar intento fallido
             const attemptResult = await recordFailedAttempt(ipAddress, email);

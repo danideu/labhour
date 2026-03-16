@@ -69,6 +69,38 @@ export async function PUT(request, { params }) {
     }
 }
 
+export async function PATCH(request, { params }) {
+    if (!await ensureAdmin()) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    // Prevent self-deactivation
+    const session = await getSession();
+    if (parseInt(id) === session.id) {
+        return NextResponse.json({ error: 'No puedes desactivarte a ti mismo' }, { status: 400 });
+    }
+
+    try {
+        const { active } = await request.json();
+
+        // Check if user exists
+        const existingUser = await queryOne('SELECT id FROM users WHERE id = ?', [id]);
+        if (!existingUser) {
+            return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+        }
+
+        await execute('UPDATE users SET active = ? WHERE id = ?', [active ? 1 : 0, id]);
+
+        return NextResponse.json({ success: true, message: `Usuario ${active ? 'activado' : 'desactivado'}` });
+
+    } catch (error) {
+        console.error('Error toggling user status:', error);
+        return NextResponse.json({ error: 'Error al cambiar estado del usuario' }, { status: 500 });
+    }
+}
+
 export async function DELETE(request, { params }) {
     if (!await ensureAdmin()) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });

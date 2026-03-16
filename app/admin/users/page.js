@@ -75,6 +75,30 @@ export default function UsersPage() {
         fetchUsers();
     }
 
+    async function handleToggleActive(user) {
+        const action = user.active !== 0 ? 'desactivar' : 'activar';
+        const newActiveStatus = user.active !== 0 ? 0 : 1;
+
+        if (!confirm(`¿Estás seguro de que quieres ${action} a este usuario?`)) return;
+
+        try {
+            const res = await fetch(`/api/users/${user.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: newActiveStatus }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || `Error al ${action}`);
+            }
+
+            fetchUsers(); // Refresh list
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
     async function handleImpersonate(user) {
         if (!confirm(`¿Iniciar sesión como "${user.name}"? Podrás volver a tu cuenta de administrador en cualquier momento.`)) return;
 
@@ -170,8 +194,15 @@ export default function UsersPage() {
                                 </tr>
                             ) : (
                                 filteredUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-white/5 transition-colors">
-                                        <td className="p-4 font-medium text-white">{user.name}</td>
+                                    <tr key={user.id} className={`hover:bg-white/5 transition-colors ${user.active === 0 ? 'opacity-50' : ''}`}>
+                                        <td className="p-4 font-medium text-white flex items-center gap-2">
+                                            {user.name}
+                                            {user.active === 0 && (
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-red-500/10 text-red-500 border border-red-500/20">
+                                                    Inactivo
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="p-4">{user.email}</td>
                                         <td className="p-4">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'admin'
@@ -205,6 +236,17 @@ export default function UsersPage() {
                                                 title="Editar"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                            </button>
+                                            <button
+                                                onClick={() => handleToggleActive(user)}
+                                                className={`mr-3 transition-colors ${user.active !== 0 ? 'text-slate-400 hover:text-amber-500' : 'text-slate-400 hover:text-emerald-400'}`}
+                                                title={user.active !== 0 ? 'Desactivar' : 'Activar'}
+                                            >
+                                                {user.active !== 0 ? (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                                                ) : (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"></path><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"></path><line x1="12" y1="2" x2="12" y2="12"></line><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                                                )}
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(user.id)}

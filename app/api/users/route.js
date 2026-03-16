@@ -18,7 +18,7 @@ export async function GET() {
     }
 
     try {
-        const users = await query('SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC');
+        const users = await query('SELECT id, name, email, role, active, created_at FROM users ORDER BY created_at DESC');
         return NextResponse.json(users);
     } catch (error) {
         console.error('Error fetching users:', error);
