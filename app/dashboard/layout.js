@@ -182,9 +182,9 @@ export default function EmployeeLayout({ children }) {
 
                 {/* Mobile Menu Overlay */}
                 {mobileMenuOpen && (
-                    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl">
+                    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl overflow-y-auto">
                         <div className="p-4">
-                            <div className="flex justify-between items-center mb-8">
+                            <div className="flex justify-between items-center mb-4">
                                 <div className="h-10 flex items-center">
                                     <Logo className="text-2xl" />
                                 </div>
@@ -192,19 +192,19 @@ export default function EmployeeLayout({ children }) {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" /></svg>
                                 </button>
                             </div>
-                            <nav className="space-y-2">
+                            <nav className="space-y-1">
                                 {navItems.map(item => (
                                     <Link
                                         key={item.href}
                                         href={item.href}
-                                        className={`flex items-center gap-4 px-4 py-4 rounded-xl text-lg ${pathname === item.href ? 'bg-white/10 text-white' : 'text-slate-300'}`}
+                                        className={`flex items-center gap-4 px-4 py-2.5 rounded-xl text-base ${pathname === item.href ? 'bg-white/10 text-white' : 'text-slate-300'}`}
                                     >
                                         {item.icon}
                                         {item.label}
                                     </Link>
                                 ))}
                             </nav>
-                            <div className="mt-8 pt-8 border-t border-white/10">
+                            <div className="mt-4 pt-4 border-t border-white/10">
                                 <LogoutButton />
                             </div>
                         </div>
