@@ -11,10 +11,10 @@ export async function POST(request) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        const { projectId, date, startTime, endTime, justification } = await request.json();
+        const { projectId, startDateTime, endDateTime, justification } = await request.json();
 
         // Validate required fields
-        if (!projectId || !date || !startTime || !endTime || !justification) {
+        if (!projectId || !startDateTime || !endDateTime || !justification) {
             return NextResponse.json({
                 error: 'Todos los campos son obligatorios: proyecto, fecha, hora inicio, hora fin y justificación'
             }, { status: 400 });
@@ -27,12 +27,8 @@ export async function POST(request) {
             }, { status: 400 });
         }
 
-        // Build datetime strings
-        const startDateTime = `${date} ${startTime}`;
-        const endDateTime = `${date} ${endTime}`;
-
         // Validate that end is after start
-        if (new Date(endDateTime) <= new Date(startDateTime)) {
+        if (new Date(startDateTime + 'Z') >= new Date(endDateTime + 'Z')) {
             return NextResponse.json({
                 error: 'La hora de fin debe ser posterior a la hora de inicio'
             }, { status: 400 });
@@ -83,7 +79,7 @@ export async function POST(request) {
         await notifyAllAdmins({
             type: 'MANUAL_ENTRY_REQUEST',
             title: 'Nueva imputación manual',
-            message: `${session.name} ha solicitado registrar una jornada manual para el ${date}`,
+            message: `${session.name} ha solicitado registrar una jornada manual para el ${startDateTime.split(' ')[0]}`,
             referenceId: entryId
         });
 

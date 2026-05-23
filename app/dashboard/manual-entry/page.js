@@ -43,10 +43,20 @@ export default function ManualEntryPage() {
         setSubmitting(true);
 
         try {
+            // Convertir hora local a UTC para que Turso la almacene igual que los fichajes automáticos
+            const startLocal = new Date(`${formData.date}T${formData.startTime}:00`);
+            const endLocal = new Date(`${formData.date}T${formData.endTime}:00`);
+            const toUTCStr = (d) => d.toISOString().replace('T', ' ').slice(0, 19);
+
             const res = await fetch('/api/entries/manual', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    projectId: formData.projectId,
+                    startDateTime: toUTCStr(startLocal),
+                    endDateTime: toUTCStr(endLocal),
+                    justification: formData.justification,
+                })
             });
 
             const data = await res.json();
