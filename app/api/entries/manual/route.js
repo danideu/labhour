@@ -55,38 +55,45 @@ export async function POST(request) {
 
         const entryId = result.lastInsertRowid;
 
-        // Create audit log
-        await createAuditLog({
-            userId: session.id,
-            actionType: AUDIT_ACTIONS.CREATE_MANUAL_ENTRY,
-            entityType: 'time_entry',
-            entityId: entryId,
-            oldValues: null,
-            newValues: {
-                project_id: projectId,
-                start_time: startDateTime,
-                end_time: endDateTime,
-                entry_type: 'MANUAL',
-                validation_status: 'PENDING'
-            },
-            deviceId,
-            ipAddress,
-            userAgent,
-            justification: justification.trim()
-        });
+        // Audit log y notificaciones son secundarios: no deben bloquear la respuesta
+        try {
+            await createAuditLog({
+                userId: session.id,
+                actionType: AUDIT_ACTIONS.CREATE_MANUAL_ENTRY,
+                entityType: 'time_entry',
+                entityId: Number(entryId),
+                oldValues: null,
+                newValues: {
+                    project_id: projectId,
+                    start_time: startDateTime,
+                    end_time: endDateTime,
+                    entry_type: 'MANUAL',
+                    validation_status: 'PENDING'
+                },
+                deviceId,
+                ipAddress,
+                userAgent,
+                justification: justification.trim()
+            });
+        } catch (e) {
+            console.error('Error en audit log (no crítico):', e);
+        }
 
-        // Notify admins
-        await notifyAllAdmins({
-            type: 'MANUAL_ENTRY_REQUEST',
-            title: 'Nueva imputación manual',
-            message: `${session.name} ha solicitado registrar una jornada manual para el ${startDateTime.split(' ')[0]}`,
-            referenceId: entryId
-        });
+        try {
+            await notifyAllAdmins({
+                type: 'MANUAL_ENTRY_REQUEST',
+                title: 'Nueva imputación manual',
+                message: `${session.name} ha solicitado registrar una jornada manual para el ${startDateTime.split(' ')[0]}`,
+                referenceId: Number(entryId)
+            });
+        } catch (e) {
+            console.error('Error en notificaciones (no crítico):', e);
+        }
 
         return NextResponse.json({
             success: true,
-            id: entryId,
-            message: 'Imputación manual creada. Pendiente de validación por un administrador.'
+            id: Number(entryId),
+            message: 'Solicitud enviada. Un administrador revisará y validará tu jornada en breve.'
         });
 
     } catch (error) {
