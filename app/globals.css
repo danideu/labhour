@@ -212,6 +212,13 @@ textarea {
   font-size: 1rem;
   width: 100%;
   transition: all 0.2s;
+}
+
+/* Quitar el estilo nativo solo en campos de texto y selects:
+   en checkboxes/radios oculta la marca y parecen bloqueados */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
   -webkit-appearance: none;
   appearance: none;
 }
